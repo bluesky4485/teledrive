@@ -1,8 +1,8 @@
 import { CloudUploadOutlined } from '@ant-design/icons'
-import { notification, Upload as BaseUpload } from 'antd'
+import { notification, Typography, Upload as BaseUpload } from 'antd'
 import mime from 'mime-types'
 import React, { useEffect, useRef } from 'react'
-import { Api } from 'teledrive-client'
+import { Api } from 'telegram'
 import { CHUNK_SIZE, MAX_UPLOAD_SIZE, RETRY_COUNT } from '../../../utils/Constant'
 import { req } from '../../../utils/Fetcher'
 import { telegramClient } from '../../../utils/Telegram'
@@ -37,7 +37,14 @@ const Upload: React.FC<Props> = ({ dataFileList: [fileList, setFileList], parent
         await new Promise(res => setTimeout(res, 3000 * ++retry))
         await cb?.()
         if (retry === RETRY_COUNT) {
-          notification.error({ message: 'Failed to upload file', description: error.message })
+          notification.error({ message: 'Failed to upload file', description: <>
+            <Typography.Paragraph>
+              {error?.response?.data?.error || error.message || 'Something error'}
+            </Typography.Paragraph>
+            <Typography.Paragraph code>
+              {JSON.stringify(error?.response?.data || error?.data || error, null, 2)}
+            </Typography.Paragraph>
+          </> })
           throw error
         }
       }
@@ -62,6 +69,14 @@ const Upload: React.FC<Props> = ({ dataFileList: [fileList, setFileList], parent
     let deleted = false
 
     try {
+      const { data: exists } = await req.get('/files', { params: { parent_id: parent?.id, name: file.name } })
+      if (/\.part0*\d*$/.test(file.name))
+        throw { status: 400, body: { error: 'The file name cannot end with ".part", even if followed by digits!' } }
+      if (/\(\d+\).+/.test(file.name))
+        throw { status: 400, body: { error: 'The file name cannot contain text after parentheses with digits inside!' } }
+      if (exists.length > 0)
+        throw { status: 400, body: { error: `A file/folder named "${file.name}" already exists!` } }
+
       while (filesWantToUpload.current?.findIndex(f => f.uid === file.uid) !== 0) {
         await new Promise(res => setTimeout(res, 1000))
       }
@@ -73,7 +88,7 @@ const Upload: React.FC<Props> = ({ dataFileList: [fileList, setFileList], parent
 
       if (localStorage.getItem('experimental')) {
         let client = await telegramClient.connect()
-        await Promise.all(Array.from(Array(fileParts).keys()).map(async j => {
+        for (let j = 0; j < fileParts; j++) {
           const fileBlob = file.slice(j * MAX_UPLOAD_SIZE, Math.min(j * MAX_UPLOAD_SIZE + MAX_UPLOAD_SIZE, file.size))
           const parts = Math.ceil(fileBlob.size / CHUNK_SIZE)
 
@@ -186,10 +201,9 @@ const Upload: React.FC<Props> = ({ dataFileList: [fileList, setFileList], parent
               await retry(async () => await uploadPart(parts - 1), async () => client = await telegramClient.connect())
             }
           }
-
-        }))
+        }
       } else {
-        await Promise.all(Array.from(Array(fileParts).keys()).map(async j => {
+        for (let j = 0; j < fileParts; j++) {
           const fileBlob = file.slice(j * MAX_UPLOAD_SIZE, Math.min(j * MAX_UPLOAD_SIZE + MAX_UPLOAD_SIZE, file.size))
           const parts = Math.ceil(fileBlob.size / CHUNK_SIZE)
 
@@ -255,7 +269,7 @@ const Upload: React.FC<Props> = ({ dataFileList: [fileList, setFileList], parent
               await uploadPart(parts - 1)
             }
           }
-        }))
+        }
       }
 
       // notification.close(`upload-${file.uid}`)
@@ -276,7 +290,14 @@ const Upload: React.FC<Props> = ({ dataFileList: [fileList, setFileList], parent
       notification.error({
         key: 'fileUploadError',
         message: error?.response?.status || 'Something error',
-        ...error?.response?.data ? { description: error.response.data.error } : {}
+        ...error?.response?.data ? { description: <>
+          <Typography.Paragraph>
+            {error?.response?.data?.error || error.message || 'Something error'}
+          </Typography.Paragraph>
+          <Typography.Paragraph code>
+            {JSON.stringify(error?.response?.data || error?.data || error, null, 2)}
+          </Typography.Paragraph>
+        </> } : {}
       })
       // filesWantToUpload.current = filesWantToUpload.current?.map(f => f.uid === file.uid ? { ...f, status: 'done' } : f)
       filesWantToUpload.current = filesWantToUpload.current?.map(f => f.uid === file.uid ? null : f).filter(Boolean)

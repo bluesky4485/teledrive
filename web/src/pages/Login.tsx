@@ -10,9 +10,9 @@ import OtpInput from 'react-otp-input'
 import QRCode from 'react-qr-code'
 import { useHistory } from 'react-router'
 import useSWRImmutable from 'swr/immutable'
-import { Api } from 'teledrive-client'
-import { generateRandomBytes } from 'teledrive-client/Helpers'
-import { computeCheck } from 'teledrive-client/Password'
+import { Api } from 'telegram'
+import { generateRandomBytes } from 'telegram/Helpers'
+import { computeCheck } from 'telegram/Password'
 import en from 'world_countries_lists/data/countries/en/world.json'
 import { fetcher, req } from '../utils/Fetcher'
 import { anonymousTelegramClient, telegramClient } from '../utils/Telegram'
@@ -99,7 +99,14 @@ const Login: React.FC<Props> = ({ me }) => {
       setLoadingSendCode(false)
       notification.error({
         message: 'Error',
-        description: error?.response?.data?.error || error.message || 'Something error'
+        description: <>
+          <Typography.Paragraph>
+            {error?.response?.data?.error || error.message || 'Something error'}
+          </Typography.Paragraph>
+          <Typography.Paragraph code>
+            {JSON.stringify(error?.response?.data || error?.data || error, null, 2)}
+          </Typography.Paragraph>
+        </>
       })
       if (error?.status === 400 || error?.response?.status === 400) {
         await fetch()
@@ -194,7 +201,14 @@ const Login: React.FC<Props> = ({ me }) => {
       }
       return notification.error({
         message: 'Error',
-        description: error?.response?.data?.error || error.message || 'Something error'
+        description: <>
+          <Typography.Paragraph>
+            {error?.response?.data?.error || error.message || 'Something error'}
+          </Typography.Paragraph>
+          <Typography.Paragraph code>
+            {JSON.stringify(error?.response?.data || error?.data || error, null, 2)}
+          </Typography.Paragraph>
+        </>
       })
     }
   }
@@ -324,7 +338,14 @@ const Login: React.FC<Props> = ({ me }) => {
       setLoadingLogin(false)
       return notification.error({
         message: 'Error',
-        description: error.response?.data?.error || 'Something error'
+        description: <>
+          <Typography.Paragraph>
+            {error?.response?.data?.error || error.message || 'Something error'}
+          </Typography.Paragraph>
+          <Typography.Paragraph code>
+            {JSON.stringify(error?.response?.data || error?.data || error, null, 2)}
+          </Typography.Paragraph>
+        </>
       })
     }
   }

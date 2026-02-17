@@ -68,7 +68,7 @@ const TableFiles: React.FC<Props> = ({
   const [popup, setPopup] = useState<{ visible: boolean, x?: number, y?: number, row?: any }>()
   const [showDetails, setShowDetails] = useState<any>()
   const { data: user } = useSWR(showDetails ? `/users/${showDetails.user_id}` : null, fetcher)
-  const { data: filesParts } = useSWR(showDetails ? `/files?name.match=${encodeURIComponent('\.part0*[0-9]+$')}&name.like=${showDetails.name.replace(/\.part0*\d+$/, '')}%&user_id=${showDetails.user_id}&parent_id${showDetails.parent_id ? `=${showDetails.parent_id}` : '.is=null'}${tab === 'shared' ? '&shared=1' : ''}` : null, fetcher)
+  const { data: filesParts } = useSWR(showDetails ? `/files?name.like=${showDetails.name.replace(/\.part0*\d+$/, '')}&user_id=${showDetails.user_id}&parent_id${showDetails.parent_id ? `=${showDetails.parent_id}` : '=null'}${tab === 'shared' ? '&shared=1' : ''}` : null, fetcher)
   const pasteEnabled = useRef<boolean | null>(null)
 
   useEffect(() => {
@@ -246,7 +246,7 @@ const TableFiles: React.FC<Props> = ({
       responsive: ['md'],
       width: 250,
       align: 'center',
-      render: (value: any, row: any) => row.upload_progress !== null ? <>Uploading {Number((row.upload_progress * 100).toFixed(2))}%</> : moment(value).local().format('llll')
+      render: (value: any, row: any) => row.upload_progress !== null ? <>Uploading...</> : moment(value).local().format('llll')
     }
   ]
 

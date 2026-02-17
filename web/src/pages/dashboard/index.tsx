@@ -69,6 +69,7 @@ const Dashboard: React.FC<PageProps & { me?: any, errorMe?: any }> = ({ match })
   const [syncConfirmation, setSyncConfirmation] = useState<boolean>()
   const [collapsedMessaging, setCollapsedMessaging] = useState<boolean>(true)
   const [collapsedView, setCollapsedView] = useState<string>()
+  const [init, setInit] = useState<boolean>()
 
   const { data: me, error: errorMe } = useSWR('/users/me', fetcher)
   const { data: filesUpload } = useSWR(fileList?.filter(file => file.response?.file)?.length
@@ -105,8 +106,11 @@ const Dashboard: React.FC<PageProps & { me?: any, errorMe?: any }> = ({ match })
 
   useEffect(() => {
     // init config
-    req.get('/config')
-  }, [])
+    if (!init) {
+      req.get('/config')
+      setInit(true)
+    }
+  }, [init])
 
   useEffect(() => {
     if (window.localStorage.getItem('session')) {
@@ -266,10 +270,9 @@ const Dashboard: React.FC<PageProps & { me?: any, errorMe?: any }> = ({ match })
         await Promise.all(rows?.map(async row => {
           if (row.type === 'folder') {
             const name = `Link of ${row.name}`
-            await req.post('/files', { file: { ...row, name, link_id: row.id, parent_id: p?.link_id || p?.id, id: undefined } })
+            await req.post('/files/addFolder', { file: { ...row, name, link_id: row.id, parent_id: p?.link_id || p?.id, id: undefined } })
           } else {
-            const name = data?.find(datum => datum.name === row.name) ? `Copy of ${row.name}` : row.name
-            await req.post('/files', { file: { ...row, name, parent_id: p?.link_id || p?.id, id: undefined } })
+            await req.post('/files/cloneFile', { file: { ...row, name: row.name, parent_id: p?.link_id || p?.id, id: undefined } })
           }
         }))
       } else if ((act || action) === 'cut') {
@@ -314,7 +317,14 @@ const Dashboard: React.FC<PageProps & { me?: any, errorMe?: any }> = ({ match })
       }
       return notification.error({
         message: error?.response?.status || 'Something error',
-        ...error?.response?.data ? { description: error.response.data.error } : {}
+        ...error?.response?.data ? { description: <>
+          <Typography.Paragraph>
+            {error?.response?.data?.error || error.message || 'Something error'}
+          </Typography.Paragraph>
+          <Typography.Paragraph code>
+            {JSON.stringify(error?.response?.data || error?.data || error, null, 2)}
+          </Typography.Paragraph>
+        </> } : {}
       })
     } finally {
       setSyncConfirmation(false)

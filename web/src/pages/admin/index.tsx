@@ -74,7 +74,14 @@ const Admin: FC<Props> = ({ me, errorMe }) => {
     } catch (error: any) {
       return notification.error({
         message: error?.response?.status || 'Something error',
-        ...error?.response?.data ? { description: error.response.data.error } : {}
+        ...error?.response?.data ? { description: <>
+          <Typography.Paragraph>
+            {error?.response?.data?.error || error.message || 'Something error'}
+          </Typography.Paragraph>
+          <Typography.Paragraph code>
+            {JSON.stringify(error?.response?.data || error?.data || error, null, 2)}
+          </Typography.Paragraph>
+        </> } : {}
       })
     }
   }
@@ -164,10 +171,16 @@ const Admin: FC<Props> = ({ me, errorMe }) => {
                   // responsive: ['md'],
                 },
                 {
+                  title: 'Role',
+                  dataIndex: 'role',
+                  key: 'role',
+                  render: (value: string, record) => <>{<Tag color="blue">{record.role}</Tag>}</>
+                },
+                {
                   title: 'Username',
                   dataIndex: 'username',
                   key: 'username',
-                  render: (value: string, record) => <>{record.role && <Tag color="red">{record.role}</Tag>} {value}</>
+                  render: (value: string, record) => <>{value}</>
                 },
                 {
                   title: 'Name',
@@ -198,7 +211,14 @@ const Admin: FC<Props> = ({ me, errorMe }) => {
                         }).catch(error => {
                           notification.error({
                             message: error?.response?.status || 'Something error',
-                            ...error?.response?.data ? { description: error.response.data.error } : {}
+                            ...error?.response?.data ? { description: <>
+                              <Typography.Paragraph>
+                                {error?.response?.data?.error || error.message || 'Something error'}
+                              </Typography.Paragraph>
+                              <Typography.Paragraph code>
+                                {JSON.stringify(error?.response?.data || error?.data || error, null, 2)}
+                              </Typography.Paragraph>
+                            </> } : {}
                           })
                         })
                       }} />
@@ -210,7 +230,14 @@ const Admin: FC<Props> = ({ me, errorMe }) => {
                       }).catch(error => {
                         notification.error({
                           message: error?.response?.status || 'Something error',
-                          ...error?.response?.data ? { description: error.response.data.error } : {}
+                          ...error?.response?.data ? { description: <>
+                            <Typography.Paragraph>
+                              {error?.response?.data?.error || error.message || 'Something error'}
+                            </Typography.Paragraph>
+                            <Typography.Paragraph code>
+                              {JSON.stringify(error?.response?.data || error?.data || error, null, 2)}
+                            </Typography.Paragraph>
+                          </> } : {}
                         })
                       })
                     }}>
